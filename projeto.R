@@ -6,10 +6,10 @@ library(pheatmap)
 #Read all datasets
 df <- read.csv(file="dataset.csv", sep = ";")
 
-cor_pele <- c('NÃƒÂ£o declarado','Branca',
+cor_pele <- c('Não declarado','Branca',
               'Preta','Parda','Amarela',
-              'IndÃƒÂ­gena','NÃƒÂ£o dispÃƒÂµe da informaÃƒÂ§ÃƒÂ£o')
-escola <- c('NÃƒÂ£o respondeu', 'PÃƒÂºblica', 'Privada')
+              'Indígena','Não dispõe da informação')
+escola <- c('Não respondeu', 'Pública', 'Privada')
 
 df$TP_COR_RACA <- as.factor(df$TP_COR_RACA)
 levels(df$TP_COR_RACA) <- cor_pele
@@ -23,7 +23,7 @@ df$Q006 <- as.factor(df$Q006)
 
 row.names(df) <- paste0("row_", seq(nrow(df)))
 
-###### 1 - EstatÃƒÂ­sticas bÃƒÂ¡sicas ######
+###### 1 - Estatísticas básicas ######
 summary(df)
 table(df$TP_SEXO, df$TP_COR_RACA)
 
@@ -98,18 +98,18 @@ df_clean_3 <- df_na[-which(df_na$NU_NOTA_CH %in% outlier_values_3),]
 df_clean_4 <- df_na[-which(df_na$df_na$NU_NOTA_Lc %in% outlier_values_4),]
 df_clean_5 <- df_na[-which(df_na$NU_NOTA_MT %in% outlier_values_5),]
 
-###### 4 - GrÃƒÂ¡ficos ######
+###### 4 - Gráficos ######
 
-ggplot(data = df_clean, aes(x=df_clean$TP_COR_RACA, y=df_clean$NU_NOTA_REDACAO,fill=df_clean$TP_SEXO)) + 
+ggplot(data = df_clean_5, aes(x=TP_COR_RACA, y=NU_NOTA_REDACAO,fill=TP_SEXO)) + 
   geom_boxplot(outlier.shape = NA)+
-  xlab("Etnia")+ylab("MÃ©dia redacao")
+  xlab("Etnia")+ylab("Média redacao")
 
-ggplot(data = df_clean, aes(x=df_clean$TP_COR_RACA, y=df_clean$NU_NOTA_REDACAO,fill=df_clean$Q006)) + 
+ggplot(data = df_clean_5, aes(x=TP_COR_RACA, y=NU_NOTA_REDACAO,fill=Q006)) + 
   geom_boxplot(outlier.shape = NA)+
-  xlab("Etnia")+ylab("MÃ©dia redacao")
+  xlab("Etnia")+ylab("Média redacao")
 
 
-###### 5 - Testes estatÃƒÂ­sticos ######
+###### 5 - Testes estatísticos ######
 
 
 
@@ -153,8 +153,3 @@ row.names(ordered) <- row.names(grupos_k)
 pheatmap(ordered, cutree_rows = 6,scale = "column",
          cluster_rows = FALSE, cluster_cols = FALSE, 
          annotation_row = grupos_k, annotation_colors = cores, annotation_legend = TRUE)
-
-
-###### 10 - EXTRA ######
-
-
