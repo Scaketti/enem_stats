@@ -15,12 +15,17 @@ df$TP_COR_RACA <- as.factor(df$TP_COR_RACA)
 levels(df$TP_COR_RACA) <- cor_pele
 df$TP_ESCOLA <- as.factor(df$TP_ESCOLA)
 levels(df$TP_ESCOLA) <- escola
+df$Q001 <- as.factor(df$Q001)
+df$Q002 <- as.factor(df$Q002)
+df$Q005 <- as.factor(df$Q005)
+df$Q006 <- as.factor(df$Q006)
 
 a <- df %>% filter(TP_ESCOLA != 'Não respondeu')
 
 row.names(df) <- paste0("row_", seq(nrow(df)))
 
 ###### 1 - Estatísticas básicas ######
+summary(df)
 table(df$TP_SEXO, df$TP_COR_RACA)
 
 notas <- df[c('NU_NOTA_CH','NU_NOTA_MT','NU_NOTA_CN','NU_NOTA_LC','NU_NOTA_REDACAO')]
@@ -38,20 +43,10 @@ boxplot(notas$NU_NOTA_CN, notas$NU_NOTA_CH,
         notas$NU_NOTA_LC, notas$NU_NOTA_MT, 
         notas$NU_NOTA_REDACAO)
 
-summary(df)
-
 ###### 2 - Filtragens ######
 
-
-
-###### 3 - Limpeza de dados ######
-
-
-
-###### 4 - Gráficos ######
-
-df2 <- df %>%
-  group_by(TP_COR_RACA, TP_SEXO) %>%
+df2 <- df_na %>%
+  group_by(TP_SEXO, TP_COR_RACA) %>%
   summarise(
     n = n(),
     media_CN = mean(NU_NOTA_CN),
@@ -59,8 +54,60 @@ df2 <- df %>%
     media_LC = mean(NU_NOTA_LC),
     media_MT = mean(NU_NOTA_MT),
     media_redacao = mean(NU_NOTA_REDACAO)
-    
   )
+
+df2 <- df_na %>%
+  group_by(TP_SEXO, TP_COR_RACA) %>%
+  summarise(
+    n = n(),
+    media_CN = mean(NU_NOTA_CN),
+    media_CH = mean(NU_NOTA_CH),
+    media_LC = mean(NU_NOTA_LC),
+    media_MT = mean(NU_NOTA_MT),
+    media_redacao = mean(NU_NOTA_REDACAO)
+  )
+
+
+###### 3 - Limpeza de dados ######
+#veriricar se existem NAs
+is.na(df)
+table(is.na(df)) # tabela de frequencia 
+
+# retirar na
+df_na <- na.omit(df)
+
+#Detectando outlier 
+outlier_values_1 <- boxplot.stats(df_na$NU_NOTA_REDACAO)$out
+outlier_values_2 <- boxplot.stats(df_na$NU_NOTA_CN)$out
+outlier_values_3 <- boxplot.stats(df_na$NU_NOTA_CH)$out
+outlier_values_4 <- boxplot.stats(df_na$NU_NOTA_LC)$out
+outlier_values_5 <- boxplot.stats(df_na$NU_NOTA_MT)$out
+
+#verifica
+library(EnvStats)
+test <- rosnerTest(df_na$NU_NOTA_REDACAO,k=length(outlier_values_1),alpha = 0.05)
+test <- rosnerTest(df_na$NU_NOTA_CN,k=length(outlier_values_2),alpha = 0.05)
+test <- rosnerTest(df_na$NU_NOTA_CH,k=length(outlier_values_3),alpha = 0.05)
+test <- rosnerTest(df_na$NU_NOTA_LC,k=length(outlier_values_4),alpha = 0.05)
+test <- rosnerTest(df_na$NU_NOTA_MT,k=length(outlier_values_5),alpha = 0.05)
+
+
+#retira
+df_clean_1 <- df_na[-which(df_na$NU_NOTA_REDACAO %in% outlier_values_1),]
+df_clean_2 <- df_na[-which(df_na$NU_NOTA_CN %in% outlier_values_2),]
+df_clean_3 <- df_na[-which(df_na$NU_NOTA_CH %in% outlier_values_3),]
+df_clean_4 <- df_na[-which(df_na$df_na$NU_NOTA_Lc %in% outlier_values_4),]
+df_clean_5 <- df_na[-which(df_na$NU_NOTA_MT %in% outlier_values_5),]
+
+###### 4 - Gráficos ######
+
+ggplot(data = df_clean_5, aes(x=TP_COR_RACA, y=NU_NOTA_REDACAO,fill=TP_SEXO)) + 
+  geom_boxplot(outlier.shape = NA)+
+  xlab("Etnia")+ylab("Média redacao")
+
+ggplot(data = df_clean_5, aes(x=TP_COR_RACA, y=NU_NOTA_REDACAO,fill=Q006)) + 
+  geom_boxplot(outlier.shape = NA)+
+  xlab("Etnia")+ylab("Média redacao")
 
 # Boxplot média das notas por escola
 # Boxplot média das notas por etnia
@@ -81,8 +128,9 @@ notas$NU_NOTA_CN <- notas$NU_NOTA_CN/10
 notas$NU_NOTA_LC <- notas$NU_NOTA_LC/10
 
 notas.pca <- prcomp(notas, 
-       center = TRUE,
-       scale. = TRUE)
+                    center = TRUE,
+                    scale. = TRUE)
+
 
 fviz_pca_biplot(notas.pca, 
                 col.ind = as.factor(a$TP_ESCOLA), palette = "jco", 
