@@ -1,0 +1,36 @@
+---
+title: "Análise das notas do ENEM durante os anos de 2015 e 2019"
+sub-title: "Projeto Final -- NG282"
+author: "Matheus Scaketti e João Rabelo"
+date: "03/12/2021"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Descrição do Tema
+
+Explicar a ideia geral do projeto.
+
+*imagem da logo do enem*
+
+Citar dataset enem
+
+## Dataset
+
+- NU_ANO: blablabla
+- TP_ESTADO: blablabla
+- TP_COR_RACA: blablabla
+
+## Integrantes
+
+- O que cada um fez: blablabla
+- Maior dificuldade: Escolher qual dataset seria mais apropriado; Manipular os datasets brutos para reduzir o número de indivíduos; Identificar padrões que poderiam criar hipóteses
+
+## Resultados
+
+## VIVA O SUS
+
+*fotinha da vacina*
