@@ -55,14 +55,14 @@ summary(df)
 table(df$TP_SEXO, df$TP_COR_RACA)
 table(df$TP_ESCOLA, df$TP_COR_RACA)
 
-plot(notas$NU_NOTA_MT, notas$NU_NOTA_REDACAO)
+plot(df$NU_NOTA_MT, df$NU_NOTA_REDACAO)
 
 hist(df$NU_IDADE)
 quantile(na.omit(df$NU_IDADE))
 
-boxplot(notas$NU_NOTA_CN, notas$NU_NOTA_CH, 
-        notas$NU_NOTA_LC, notas$NU_NOTA_MT, 
-        notas$NU_NOTA_REDACAO)
+boxplot(df$NU_NOTA_CN, df$NU_NOTA_CH, 
+        df$NU_NOTA_LC, df$NU_NOTA_MT, 
+        df$NU_NOTA_REDACAO)
 
 ###### 2 - Filtragens ######
 
@@ -136,6 +136,7 @@ grid.arrange(bp1, bp2, nrow=2)
 
 ###### 5 - Testes estatísticos ######
 
+#comparação de todos os anos
 df_teste <- data.frame(
   media2015 = apply((df_clean %>% filter(NU_ANO == 2015))[,c(8:12)], 1, mean)[1:594],
   media2016 = apply((df_clean %>% filter(NU_ANO == 2016))[,c(8:12)], 1, mean)[1:594],
@@ -144,23 +145,6 @@ df_teste <- data.frame(
   media2019 = apply((df_clean %>% filter(NU_ANO == 2019))[,c(8:12)], 1, mean)[1:594]
 )
 
-#Comparar notas pelos anos
-model  <- lm(df_teste)
-ggqqplot(residuals(model))
-ggqqplot(df_teste, "media2015", facet.by = "media2019")
-shapiro.test(residuals(model))
-
-with(data,tapply(media2015,media2019,shapiro.test))
-
-## Homogenidade (Variancias iguais)
-plot(model, 1)
-
-library(car) #carrega a funcao leveneTest
-leveneTest(df_teste,center=median)
-# Como p < 0.05, ha diferenca na variancia
-
-kruskal.test(df_teste) 
-#
 
 ###### 6 - PCA ######
 
@@ -180,7 +164,34 @@ fviz_pca_biplot(notas.pca,
 ###### 7 - Heatmaps ######
 
 pheatmap(notas,cutree_rows=3, scale = "column",
-         cluster_rows = TRUE,cluster_cols = FALSE)
+         cluster_rows = TRUE,cluster_cols = FALSE, 
+         main="Relação de notas de alunos do enem (2015 ~ 2019)")
+
+df_publica <- df_clean[df_clean$TP_ESCOLA == 'Pública',]
+
+grupos_heat = data.frame(RACA = df_publica$TP_COR_RACA,
+                      RENDA = df_publica$Q006)
+
+rownames(grupos_heat) <- rownames(df_publica)
+
+#mapeia as cores para cada tipo de renda
+cores_renda <- c(rep("purple", 3), rep("black", 4), rep("cyan",6), rep("yellow", 4))
+names(cores_renda) <- renda
+
+cores_heat = list(RACA = c("Branca"="red", "Preta"="blue",
+                           "Parda"="orange", "Amarela"="cyan", "Indígena"="purple"),
+                  RENDA = c(cores_renda))
+#geral
+pheatmap(df_publica[,c(8:12)], cutree_rows = 3, scale = "column", 
+         annotation_row = grupos_heat, annotation_colors = cores_heat,
+         cluster_rows = TRUE,cluster_cols = FALSE, annotation_legend = TRUE,
+         main="Relação de notas de alunos de escola pública (2015 ~ 2019)")
+
+#ano 2019
+pheatmap(df_publica[df_publica$NU_ANO==2019,c(8:12)], cutree_rows = 3, scale = "column", 
+         annotation_row = grupos_heat, annotation_colors = cores_heat,
+         cluster_rows = TRUE,cluster_cols = FALSE, annotation_legend = TRUE,
+         main="Relação de notas de alunos de escola pública (2019)")
 
 ###### 8 - Mapas ######
 no_axis <- theme(axis.title=element_blank(),
@@ -276,11 +287,11 @@ df_clean$kmeans <- factor(k_notas$cluster)
 grupos_k = data.frame(ID = df_clean[order(df_clean$kmeans),]$kmeans,
                       ESCOLA = df_clean[order(df_clean$kmeans),]$TP_ESCOLA)
 #cores = list(ID = c("1"="red", "2"="blue","3"="orange", "4"="purple", "5"="black", "6"="pink"))
-cores = list(ID = c("1"="red", "2"="blue","3"="orange"),
+cores_k = list(ID = c("1"="red", "2"="blue","3"="orange"),
                    ESCOLA = c("Pública"="purple", "Privada"="black"))
 ordered <- df_clean[order(df_clean$kmeans),c('NU_NOTA_CH','NU_NOTA_MT','NU_NOTA_CN','NU_NOTA_LC','NU_NOTA_REDACAO')]
 row.names(ordered) <- row.names(grupos_k)
 
 pheatmap(ordered, cutree_rows = 3,scale = "column",
          cluster_rows = FALSE, cluster_cols = FALSE, 
-         annotation_row = grupos_k, annotation_colors = cores, annotation_legend = TRUE)
+         annotation_row = grupos_k, annotation_colors = cores_k, annotation_legend = TRUE)
