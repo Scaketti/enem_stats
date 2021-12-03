@@ -64,7 +64,7 @@ Marcados com (*) foram usados no script
 
 ## Resultados
 
-```{r}
+```{r libraries}
 library(readxl)
 library(dplyr)
 library(factoextra)
@@ -74,7 +74,9 @@ library(grid)
 library(reshape2)
 library(ggpubr)
 library(geobr)
+```
 
+```{r Reading and basic handling}
 #Read all datasets
 df <- read.csv(file="dataset.csv", sep = ";")
 
@@ -129,7 +131,9 @@ row.names(df) <- paste0("row_", seq(nrow(df)))
 
 #limpando colunas indesejadas
 df <- df[,-c(1,4, 6:8, 11, 13,14,20)]
+```
 
+```{r Estatística Básica}
 ###### 1 - Estatísticas básicas ######
 summary(df)
 table(df$TP_SEXO, df$TP_COR_RACA)
@@ -162,7 +166,9 @@ df2 <- df_na %>%
 
 df <- df_na %>% filter(TP_ESCOLA != 'Não respondeu') %>% 
   filter(TP_COR_RACA != 'Não declarado' & TP_COR_RACA != 'Não dispõe da informação')
+```
 
+```{r Limpeza}
 ###### 3 - Limpeza de dados ######
 #veriricar se existem NAs
 #is.na(df)
@@ -192,16 +198,22 @@ df_clean <- df[-which(df$NU_NOTA_REDACAO %in% outlier_values_1 |
                       df$NU_NOTA_CH %in% outlier_values_3 |
                       df$NU_NOTA_LC %in% outlier_values_4 |
                       df$NU_NOTA_MT %in% outlier_values_5),]
+```
 
+```{r Gráficos}
 ###### 4 - Gráficos ######
 
 ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=TP_SEXO)) + 
   geom_boxplot(outlier.shape = NA)+
-  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Média notas do enem por sexo e raça")
+  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Média notas do enem por sexo e raça")+
+  stat_compare_means(label.y = c(800),
+                     method = "wilcox.test",paired = FALSE)
 
 bp1 <- ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=TP_ESCOLA)) + 
   geom_boxplot(outlier.shape = NA)+
-  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Médias de notas do enem por tipo de escola")
+  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Médias de notas do enem por tipo de escola")+
+  stat_compare_means(label.y = c(800),
+                     method = "wilcox.test",paired = FALSE)
 
 bp2 <- ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=Q006)) + 
   geom_boxplot(outlier.shape = NA)+
@@ -214,6 +226,9 @@ ggplot(df_clean, aes(x=NU_NOTA_MEDIA, fill=Q001)) +
   theme(legend.position = "right")+
   ggtitle("Média de notas em relação a escolaridade da mãe")
 
+```
+
+```{r Testes Estatísticos}
 ###### 5 - Testes estatísticos ######
 
 ## Kruskalwallis durante anos ##
@@ -260,7 +275,9 @@ df_escolaridade <- data.frame()
 #p-value < 0.05 (3.268e-16) rejeita H0
 wilcox.test(df_escolaridade_baixa$NU_NOTA_MEDIA, df_escolaridade_alto$NU_NOTA_MEDIA,exact = FALSE,
                    paired = FALSE)
+```
 
+```{r PCA}
 ###### 6 - PCA ######
 
 notas_geral <- df_clean[,8:12]
@@ -275,7 +292,9 @@ fviz_pca_biplot(notas_geral.pca,
                 col.var = "black", repel = TRUE,
                 legend.title = "Tipo Escola"
 )
+```
 
+```{r Heatmaps}
 ###### 7 - Heatmaps ######
 
 pheatmap(notas_geral,cutree_rows=3, scale = "column",
@@ -307,7 +326,9 @@ pheatmap(df_publica[df_publica$NU_ANO==2019,c(8:12)], cutree_rows = 3, scale = "
          annotation_row = grupos_heat, annotation_colors = cores_heat,
          cluster_rows = TRUE,cluster_cols = FALSE, annotation_legend = TRUE,
          main="Relação de notas de alunos de escola pública (2019)")
+```
 
+```{r Mapas}
 ###### 8 - Mapas ######
 no_axis <- theme(axis.title=element_blank(),
                  axis.text=element_blank(),
@@ -390,7 +411,9 @@ m5<-ggplot() +
 
 grid.arrange(m1,m2,m3,m4,m5, 
              nrow=3, top=textGrob("Alunos de escola pública com nota > 500 (2015 ~ 2019)"))
+```
 
+```{r Clustering}
 ###### 9 - Clustering ######
 
 dist_scaled <- dist(scale(notas_geral))

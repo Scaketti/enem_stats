@@ -130,11 +130,15 @@ df_clean <- df[-which(df$NU_NOTA_REDACAO %in% outlier_values_1 |
 
 ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=TP_SEXO)) + 
   geom_boxplot(outlier.shape = NA)+
-  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Média notas do enem por sexo e raça")
+  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Média notas do enem por sexo e raça")+
+  stat_compare_means(label.y = c(800),
+                     method = "wilcox.test",paired = FALSE)
 
 bp1 <- ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=TP_ESCOLA)) + 
   geom_boxplot(outlier.shape = NA)+
-  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Médias de notas do enem por tipo de escola")
+  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Médias de notas do enem por tipo de escola")+
+  stat_compare_means(label.y = c(800),
+                     method = "wilcox.test",paired = FALSE)
 
 bp2 <- ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=Q006)) + 
   geom_boxplot(outlier.shape = NA)+
