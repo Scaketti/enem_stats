@@ -23,6 +23,14 @@ renda <- c('Nenhuma renda', 'Ate R$ 788', 'R$ 788,01 ate R$ 1.182',
            'De R$ 6.304,01 até R$ 7.092', 'De R$ 7.092,01 até R$ 7.880',
            'De R$ 7.880,01 até R$ 9.456', 'De R$ 9.456,01 até R$ 11.820',
            'De R$ 11.820,01 até R$ 15.760', 'Mais de 15.760')
+escolaridade <- c('Nunca estudou',
+                  'Não completou a 4ª série/5º ano do Ensino Fundamental',
+                  'Completou a 4ª série/5º ano, mas não completou a 8ª série/9º ano do Ensino Fundamental',
+                  'Completou a 8ª série/9º ano do Ensino Fundamental, mas não completou o Ensino Médio',
+                  'Completou o Ensino Médio, mas não completou a Faculdade',
+                  'Completou a Faculdade, mas não completou a Pós-graduação',
+                  'Completou a Pós-graduação',
+                  'Não sei')
 
 df$TP_COR_RACA <- as.factor(df$TP_COR_RACA)
 levels(df$TP_COR_RACA) <- cor_pele
@@ -30,11 +38,15 @@ df$TP_ESCOLA <- as.factor(df$TP_ESCOLA)
 levels(df$TP_ESCOLA) <- escola
 
 df$NU_ANO <- as.factor(df$NU_ANO)
-df$Q001 <- as.factor(df$Q001)
-df$Q002 <- as.factor(df$Q002)
 df$Q005 <- as.factor(df$Q005)
 
 #limpando erros
+df <- df[df$Q001 != '',]
+df$Q001 <- as.factor(df$Q001)
+levels(df$Q001) <- escolaridade
+df <- df[df$Q002 != '',]
+df$Q002 <- as.factor(df$Q002)
+levels(df$Q002) <- escolaridade
 df <- df[df$Q006 != '',]
 df$Q006 <- as.factor(df$Q006)
 levels(df$Q006) <- renda
@@ -130,16 +142,12 @@ bp2 <- ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=Q006)) +
 
 grid.arrange(bp1, bp2, nrow=2)
 
-###### 5 - Testes estatísticos ######
+ggplot(df_clean, aes(x=NU_NOTA_MEDIA, fill=Q001)) + 
+  geom_density(alpha=.5) +
+  theme(legend.position = "right")+
+  ggtitle("Média de notas em relação a escolaridade da mãe")
 
-#comparação de todos os anos
-df_teste <- data.frame(
-  media2015 = apply((df_clean %>% filter(NU_ANO == 2015))[,c(8:12)], 1, mean)[1:594],
-  media2016 = apply((df_clean %>% filter(NU_ANO == 2016))[,c(8:12)], 1, mean)[1:594],
-  media2017 = apply((df_clean %>% filter(NU_ANO == 2017))[,c(8:12)], 1, mean)[1:594],
-  media2018 = apply((df_clean %>% filter(NU_ANO == 2018))[,c(8:12)], 1, mean)[1:594],
-  media2019 = apply((df_clean %>% filter(NU_ANO == 2019))[,c(8:12)], 1, mean)[1:594]
-)
+###### 5 - Testes estatísticos ######
 
 ## Kruskalwallis durante anos ##
 model  <- lm(NU_NOTA_MEDIA ~ NU_ANO, data = df_clean)
@@ -160,17 +168,41 @@ leveneTest(NU_NOTA_MEDIA ~ NU_ANO,data = df_clean,center=median)
 #Aceiramos a hipótese (não melhora durante os anos)
 kruskal.test(NU_NOTA_MEDIA ~ NU_ANO, data = df_clean)
 
-## Kruskal wallis houve melhora para pessoas de escola publica? ##
+## Mann U test possuir pais e maes com escolaridade ajuda sua nota? ##
+
+df_escolaridade_baixa <- df_clean %>% filter(TP_ESCOLA == 'Pública', 
+          Q001 %in% c('Nunca estudou',
+                      'Não completou a 4ª série/5º ano do Ensino Fundamental',
+                      'Completou a 4ª série/5º ano, mas não completou a 8ª série/9º ano do Ensino Fundamental',
+                      'Completou a 8ª série/9º ano do Ensino Fundamental, mas não completou o Ensino Médio'),
+          Q002 %in% c('Nunca estudou',
+                      'Não completou a 4ª série/5º ano do Ensino Fundamental',
+                      'Completou a 4ª série/5º ano, mas não completou a 8ª série/9º ano do Ensino Fundamental',
+                      'Completou a 8ª série/9º ano do Ensino Fundamental, mas não completou o Ensino Médio')
+          )
+df_escolaridade_alto <- df_clean %>% filter(TP_ESCOLA == 'Pública',
+          Q001 %in% c('Completou o Ensino Médio, mas não completou a Faculdade',
+                      'Completou a Faculdade, mas não completou a Pós-graduação',
+                      'Completou a Pós-graduação'),
+          Q002 %in% c('Completou o Ensino Médio, mas não completou a Faculdade',
+                      'Completou a Faculdade, mas não completou a Pós-graduação',
+                      'Completou a Pós-graduação'))
+df_escolaridade <- data.frame()
+
+#h0 -> possuir pais com melhor escolaridade te ajuda a tirar melhor nota
+#p-value < 0.05 (3.268e-16) rejeita H0
+wilcox.test(df_escolaridade_baixa$NU_NOTA_MEDIA, df_escolaridade_alto$NU_NOTA_MEDIA,exact = FALSE,
+                   paired = FALSE)
 
 ###### 6 - PCA ######
 
-notas <- df_clean[c('NU_NOTA_CH','NU_NOTA_MT','NU_NOTA_CN','NU_NOTA_LC','NU_NOTA_REDACAO')]
+notas_geral <- df_clean[,8:12]
 
-notas.pca <- prcomp(notas, 
+notas_geral.pca <- prcomp(notas_geral, 
                     center = TRUE,
                     scale. = TRUE)
 
-fviz_pca_biplot(notas.pca, 
+fviz_pca_biplot(notas_geral.pca, 
                 col.ind = as.factor(df_clean$TP_ESCOLA), palette = "jco", 
                 addEllipses = TRUE, label = "var",
                 col.var = "black", repel = TRUE,
@@ -179,7 +211,7 @@ fviz_pca_biplot(notas.pca,
 
 ###### 7 - Heatmaps ######
 
-pheatmap(notas,cutree_rows=3, scale = "column",
+pheatmap(notas_geral,cutree_rows=3, scale = "column",
          cluster_rows = TRUE,cluster_cols = FALSE, 
          main="Relação de notas de alunos do enem (2015 ~ 2019)")
 
@@ -294,8 +326,8 @@ grid.arrange(m1,m2,m3,m4,m5,
 
 ###### 9 - Clustering ######
 
-dist_scaled <- dist(scale(notas))
-fviz_nbclust(notas, kmeans, method = "wss")
+dist_scaled <- dist(scale(notas_geral))
+fviz_nbclust(notas_geral, kmeans, method = "wss")
 k_notas <- kmeans(dist_scaled,centers=3)
 
 df_clean$kmeans <- factor(k_notas$cluster)
