@@ -29,6 +29,7 @@ levels(df$TP_COR_RACA) <- cor_pele
 df$TP_ESCOLA <- as.factor(df$TP_ESCOLA)
 levels(df$TP_ESCOLA) <- escola
 
+df$NU_ANO <- as.factor(df$NU_ANO)
 df$Q001 <- as.factor(df$Q001)
 df$Q002 <- as.factor(df$Q002)
 df$Q005 <- as.factor(df$Q005)
@@ -115,24 +116,19 @@ df_clean <- df[-which(df$NU_NOTA_REDACAO %in% outlier_values_1 |
 
 ###### 4 - Gráficos ######
 
-ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_REDACAO,fill=TP_SEXO)) + 
+ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=TP_SEXO)) + 
   geom_boxplot(outlier.shape = NA)+
-  xlab("Etnia")+ylab("Média redacao")
+  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Média notas do enem por sexo e raça")
 
-bp1 <- ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_REDACAO,fill=TP_ESCOLA)) + 
+bp1 <- ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=TP_ESCOLA)) + 
   geom_boxplot(outlier.shape = NA)+
-  xlab("Etnia")+ylab("Média redacao")+ggtitle("Médias de notas de redação por tipo de escola")
+  xlab("Etnia")+ylab("Média nota enem")+ggtitle("Médias de notas do enem por tipo de escola")
 
-bp2 <- ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_REDACAO,fill=Q006)) + 
+bp2 <- ggplot(data = df_clean, aes(x=TP_COR_RACA, y=NU_NOTA_MEDIA,fill=Q006)) + 
   geom_boxplot(outlier.shape = NA)+
-  xlab("Etnia")+ylab("Média redacao")
-
-table(df_clean$TP_ESCOLA, df_clean$TP_COR_RACA)
+  xlab("Etnia")+ylab("Média nota enem")
 
 grid.arrange(bp1, bp2, nrow=2)
-
-# Corrplot?
-# ?
 
 ###### 5 - Testes estatísticos ######
 
@@ -145,6 +141,26 @@ df_teste <- data.frame(
   media2019 = apply((df_clean %>% filter(NU_ANO == 2019))[,c(8:12)], 1, mean)[1:594]
 )
 
+## Kruskalwallis durante anos ##
+model  <- lm(NU_NOTA_MEDIA ~ NU_ANO, data = df_clean)
+ggqqplot(residuals(model))
+ggqqplot(df_clean, "NU_NOTA_MEDIA", facet.by = "NU_ANO")
+shapiro.test(residuals(model))
+
+with(df_clean,tapply(NU_NOTA_MEDIA,NU_ANO,shapiro.test))
+
+plot(model, 1)
+
+library(car) #carrega a funcao leveneTest
+leveneTest(NU_NOTA_MEDIA ~ NU_ANO,data = df_clean,center=median)
+# Como p < 0.05, ha diferenca na variancia
+
+#H0 -> notas mantem o mesmo durante os anos?
+#p-value > 0.05 (0.1424)
+#Aceiramos a hipótese (não melhora durante os anos)
+kruskal.test(NU_NOTA_MEDIA ~ NU_ANO, data = df_clean)
+
+## Kruskal wallis houve melhora para pessoas de escola publica? ##
 
 ###### 6 - PCA ######
 
